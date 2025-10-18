@@ -1,0 +1,16 @@
+{
+  "data": [
+    {
+      "path": "test-units/test-member1.wasm",
+      "title": "Test Member1",
+      "description": "The first test member. Writes \"Hello world from test-member1!\" to stdout. Additionally has another function called `greet` for library testing.",
+      "module_type": "binary"
+    },
+    {
+      "path": "test-units/test-member2.wasm",
+      "title": "Test Member2",
+      "description": "The second test member. Writes \"Hello world from test-member2!\" to stdout, then prints a list of dir entries from the pre-opened directory.",
+      "module_type": "binary"
+    }
+  ]
+}

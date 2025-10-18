@@ -1,0 +1,15 @@
+[package]
+name = "test-member"
+version = "0.1.0"
+edition = "2024"
+
+[build]
+target = "wasm32-wasip1"
+
+[[bin]]
+name = "test-member1"
+path = "src/bin/test-member1.rs"
+
+[[bin]]
+name = "test-member2"
+path = "src/bin/test-member2.rs"
