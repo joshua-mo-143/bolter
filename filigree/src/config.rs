@@ -26,8 +26,9 @@ pub struct Module {
     pub module_type: ModuleKind,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ModuleKind {
     Binary,
+    Tool,
 }

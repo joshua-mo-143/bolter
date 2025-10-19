@@ -1,6 +1,8 @@
 use wasmtime::{Engine, Instance, Linker, Module, Store, TypedFunc};
 use wasmtime_wasi::{DirPerms, FilePerms, WasiCtxBuilder, p1::WasiP1Ctx};
 
+use crate::config::ModuleKind;
+
 pub mod config;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -11,7 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &engine,
         WasiCtxBuilder::new()
             .inherit_stdio()
-            .preopened_dir(".", "eep", DirPerms::all(), FilePerms::all())
+            .preopened_dir(".", ".", DirPerms::all(), FilePerms::all())
             .unwrap()
             .build_p1(),
     );
@@ -21,16 +23,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for binary in config.data {
         let module = Module::from_file(&engine, &binary.path)?;
         let instance = linker_wasi.instantiate(&mut store, &module)?;
-        for export in instance.exports(&mut store) {
-            println!("{}", export.name());
+
+        match binary.module_type {
+            ModuleKind::Binary => {
+                let start: TypedFunc<(), ()> =
+                    instance.get_typed_func(&mut store, "_start").unwrap();
+                start.call(&mut store, ())?;
+            }
+            ModuleKind::Tool => {
+                let result = run_wasm_tool(&instance, &mut store)?;
+
+                println!("Got from wasm: {result}");
+            }
         }
-
-        let start: TypedFunc<(), ()> = instance.get_typed_func(&mut store, "_start").unwrap();
-        start.call(&mut store, ())?;
-
-        let result = run_wasm_tool(&instance, &mut store)?;
-
-        println!("Got from wasm: {result}");
     }
 
     Ok(())
@@ -46,20 +51,23 @@ fn run_wasm_tool(
     let toolcall: TypedFunc<(i32, i32, i32, i32), i32> =
         instance.get_typed_func(&mut store, "run_tool")?;
 
-    let input_bytes = b"Josh";
-    let input_ptr = memory.data_size(&store) as u32;
+    let tool_input = serde_json::json!({"bar": "Hello world!"});
+    let tool_input = serde_json::to_string(&tool_input).unwrap();
+    let input_bytes = tool_input.as_bytes();
+    let input_ptr = 1024u32;
     let input_len = input_bytes.len() as u32;
-
-    let required_pages = ((input_ptr + input_len) as usize / (64 * 1024)) as u64 + 1;
-    memory.grow(&mut store, required_pages)?;
-
-    memory.write(&mut store, input_ptr as usize, input_bytes)?;
-
-    let output_cap = 64u32;
     let output_ptr = input_ptr + input_len;
+    let output_cap = 1024u32;
 
-    let required_pages = ((input_ptr + input_len) as usize / (64 * 1024)) as u64 + 1;
-    memory.grow(&mut store, required_pages)?;
+    let memory_size = memory.data_size(&store);
+    let required_memory = (output_ptr + output_cap) as usize;
+
+    if required_memory > memory_size {
+        let extra_pages = ((required_memory - memory_size) / (64 * 1024)) + 1;
+        memory.grow(&mut store, extra_pages as u64)?;
+    }
+
+    memory.write(&mut store, input_ptr as usize, &input_bytes)?;
 
     let bytes_written = toolcall.call(
         &mut store,
