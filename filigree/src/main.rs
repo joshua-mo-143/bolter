@@ -40,6 +40,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let result = run_wasm_tool(&instance, &mut store)?;
 
                 println!("Got from wasm: {result}");
+
+                let result = run_wasm_tool(&instance, &mut store)?;
+
+                println!("Got from wasm: {result}");
             }
         }
     }
@@ -106,7 +110,7 @@ pub fn get_tool_definition(
         instance.get_typed_func(&mut store, "tool_definition")?;
 
     let output_ptr = 1024u32;
-    let output_cap = 4096u32;
+    let output_cap = 1024u32;
 
     let memory_size = memory.data_size(&store);
     let required_memory = (output_ptr + output_cap) as usize;
