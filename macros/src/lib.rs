@@ -45,7 +45,7 @@ pub fn wasi_tool(_attrs: TokenStream, body: TokenStream) -> TokenStream {
 
     let quote = quote! {
         const _: fn() = || {
-            fn check_input<T: for<'a> serde::Deserialize<'a>>() {}
+            fn check_input<T: for<'a> serde::Deserialize<'a> + schemars::JsonSchema>() {}
             fn check_output<T: serde::Serialize>() {}
             check_input::<#input_type>();
             check_output::<#output_type>();
@@ -73,6 +73,19 @@ pub fn wasi_tool(_attrs: TokenStream, body: TokenStream) -> TokenStream {
             }
 
             write_len as u32
+        }
+
+        #[unsafe(no_mangle)]
+        pub fn tool_definition(out_ptr: *mut u8, max_len: u32) -> u32 {
+            let json = serde_json::to_string(&schemars::schema_for!(#input_type)).unwrap();
+            let result_bytes = json.as_bytes();
+            let n = result_bytes.len().min(max_len as usize);
+
+            unsafe {
+                core::ptr::copy_nonoverlapping(result_bytes.as_ptr(), out_ptr, n);
+            }
+
+            n as u32
         }
     };
 

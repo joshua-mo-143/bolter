@@ -1,4 +1,6 @@
-#[derive(serde::Deserialize)]
+use schemars::JsonSchema;
+
+#[derive(serde::Deserialize, JsonSchema)]
 pub struct Foo {
     pub bar: String,
 }

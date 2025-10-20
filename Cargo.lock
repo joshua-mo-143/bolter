@@ -2165,6 +2165,7 @@ name = "test-lib"
 version = "0.1.0"
 dependencies = [
  "macros",
+ "schemars",
  "serde",
  "serde_json",
 ]
@@ -2174,6 +2175,7 @@ name = "test-member"
 version = "0.1.0"
 dependencies = [
  "macros",
+ "schemars",
  "serde",
  "serde_json",
 ]
