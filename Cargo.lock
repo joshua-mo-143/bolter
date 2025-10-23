@@ -117,6 +117,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bolter"
+version = "0.1.0"
+dependencies = [
+ "rig-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "wasmtime",
+ "wasmtime-wasi",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -590,18 +602,6 @@ dependencies = [
  "cfg-if",
  "rustix 1.1.2",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "filigree"
-version = "0.1.0"
-dependencies = [
- "rig-core",
- "serde",
- "serde_json",
- "tokio",
- "wasmtime",
- "wasmtime-wasi",
 ]
 
 [[package]]
