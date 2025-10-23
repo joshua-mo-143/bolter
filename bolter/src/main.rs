@@ -2,66 +2,30 @@ use rig::{
     OneOrMany,
     agent::Text,
     client::{CompletionClient, ProviderClient},
-    completion::{CompletionModel, CompletionRequest, ToolDefinition},
+    completion::{CompletionModel, CompletionRequest},
     message::{AssistantContent, Message, ToolResult, ToolResultContent, UserContent},
 };
-use wasmtime::{Engine, Instance, Linker, Module, Store, TypedFunc};
-use wasmtime_wasi::{DirPerms, FilePerms, WasiCtxBuilder, p1::WasiP1Ctx};
+use wasmtime::{Instance, Store, TypedFunc};
+use wasmtime_wasi::p1::WasiP1Ctx;
 
-use crate::config::ModuleKind;
+use crate::runtime::WasiRuntime;
 
 pub mod config;
+pub mod runtime;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let engine = Engine::default();
-    let mut linker_wasi = Linker::new(&engine);
-    wasmtime_wasi::p1::add_to_linker_sync(&mut linker_wasi, |ctx| ctx)?;
-    let mut store = Store::new(
-        &engine,
-        WasiCtxBuilder::new()
-            .inherit_stdio()
-            .preopened_dir(".", ".", DirPerms::all(), FilePerms::all())
-            .unwrap()
-            .build_p1(),
-    );
+    let mut runtime = WasiRuntime::new()?;
 
     let config = config::Config::from_file("test-units/test_config.json");
 
-    let mut tools: Vec<(
-        String,
-        (
-            ToolDefinition,
-            Module,
-            Instance,
-            TypedFunc<(i32, i32, i32, i32), i32>,
-        ),
-    )> = Vec::new();
-
     for binary in config.data {
-        let module = Module::from_file(&engine, &binary.path)?;
-        let instance = linker_wasi.instantiate(&mut store, &module)?;
-
-        match binary.module_type {
-            ModuleKind::Tool => {
-                let tooldef = get_tool_definition(&instance, &mut store)?;
-                let tooldef = ToolDefinition {
-                    name: binary.title.clone(),
-                    description: binary.description,
-                    parameters: serde_json::from_str(&tooldef).unwrap(),
-                };
-                let toolcall: TypedFunc<(i32, i32, i32, i32), i32> =
-                    instance.get_typed_func(&mut store, "run_tool")?;
-
-                tools.push((binary.title, (tooldef, module, instance, toolcall)));
-            }
-            _ => {}
-        }
+        runtime.add_module(binary)?;
     }
 
     let completion_model = rig::providers::openai::Client::from_env().completion_model("gpt-4o");
 
-    let tooldefs: Vec<ToolDefinition> = tools.iter().map(|x| x.1.0.clone()).collect();
+    let tooldefs = runtime.get_tooldefs();
 
     let mut chat_history: Vec<Message> = Vec::new();
 
@@ -89,10 +53,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 id: None,
                 content: OneOrMany::one(AssistantContent::ToolCall(tc.clone())),
             });
-            let Some((_, (_, _, instance, func))) = tools.iter().find(|x| x.0 == tc.function.name)
-            else {
-                return Err("Attempted to call a tool that doesn't exist".into());
-            };
 
             println!(
                 "Calling function {name} with args {args:?}",
@@ -100,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 args = tc.function.arguments
             );
 
-            let text = run_wasm_tool(instance, &mut store, func.to_owned(), tc.function.arguments)?;
+            let text = runtime.run_tool(&tc.function.name, tc.function.arguments)?;
 
             println!("Tool returned result: {text}");
 
@@ -139,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn run_wasm_tool(
     instance: &Instance,
     mut store: &mut Store<WasiP1Ctx>,
-    func: TypedFunc<(i32, i32, i32, i32), i32>,
+    func: &TypedFunc<(i32, i32, i32, i32), i32>,
     args: serde_json::Value,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let memory = instance
@@ -160,7 +120,7 @@ fn run_wasm_tool(
         memory.grow(&mut store, extra_pages as u64)?;
     }
 
-    memory.write(&mut store, input_ptr as usize, &input_bytes)?;
+    memory.write(&mut store, input_ptr as usize, input_bytes)?;
 
     let bytes_written = func.call(
         &mut store,

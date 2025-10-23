@@ -1,18 +1,6 @@
 {
   "data": [
     {
-      "path": "test-units/test-member1.wasm",
-      "title": "test_member1",
-      "description": "The first test member. Writes \"Hello world from test-member1!\" to stdout. Additionally has a function that can be used as a WASM tool.",
-      "module_type": "binary"
-    },
-    {
-      "path": "test-units/test-member2.wasm",
-      "title": "test_member2",
-      "description": "The second test member. Writes \"Hello world from test-member2!\" to stdout, then prints a list of dir entries from the pre-opened directory.",
-      "module_type": "binary"
-    },
-    {
       "path": "test-units/test_lib.wasm",
       "title": "test_lib",
       "description": "A test library that holds a single `run_tool` function (created from an attribute macro). Returns \"Hello world from test-lib!\".",
