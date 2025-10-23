@@ -68,6 +68,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let prompt =
         "Please use my WASI tool to help me verify that this demo works, and return what it says.";
 
+
+    println!("Prompt: {prompt}");
+
     chat_history.push(prompt.into());
 
     let res = completion_model.completion_request("Please use my test_lib tool to help me verify that this demo works, and return what it says.")
@@ -88,11 +91,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 content: OneOrMany::one(AssistantContent::ToolCall(tc.clone())),
             });
             let Some((_, (_, _, instance, func))) = tools.iter().find(|x| x.0 == tc.function.name)
+
+            println!("Calling function {name} with args {args:?}", name = tc.function.name, args = tc.function.args);
             else {
                 return Err("Attempted to call a tool that doesn't exist".into());
             };
 
             let text = run_wasm_tool(instance, &mut store, func.to_owned(), tc.function.arguments)?;
+
+            println!("Tool returned result: {text}");
 
             chat_history.push(Message::User {
                 content: OneOrMany::one(UserContent::ToolResult(ToolResult {
@@ -121,7 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .unwrap();
 
-    println!("{:?}", res.choice.first());
+    println!("Final response: {:?}", res.choice.first());
 
     Ok(())
 }
