@@ -1,3 +1,4 @@
 target/
 test-units/test-member*
 test-units/test_lib*
+.envrc
