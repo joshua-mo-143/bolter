@@ -6,6 +6,7 @@ pub struct Foo {
 }
 
 #[macros::wasi_tool]
-pub fn my_tool(_input: Foo) -> String {
-    String::from("Hello world from test-lib!")
+pub fn my_tool(input: Foo) -> String {
+    let Foo { bar } = input;
+    format!("Hello {bar}")
 }

@@ -3,7 +3,7 @@
     {
       "path": "test-units/test_lib.wasm",
       "title": "test_lib",
-      "description": "A test library that holds a single `run_tool` function (created from an attribute macro). Returns \"Hello world from test-lib!\".",
+      "description": "A test library that holds a single `run_tool` function (created from an attribute macro). Returns \"Hello\" followed by whatever string you put into it.",
       "module_type": "tool"
     }
   ]

@@ -2,21 +2,19 @@ use std::collections::HashMap;
 
 use rig::completion::ToolDefinition;
 use wasmtime::{Engine, Instance, Linker, Module, Store, TypedFunc};
-use wasmtime_wasi::{DirPerms, FilePerms, WasiCtxBuilder, p1::WasiP1Ctx};
 
-use crate::{get_tool_definition, run_wasm_tool};
+use super::utils::{get_tool_definition, run_wasm_tool};
 
-pub struct WasiRuntime {
+pub struct WasmRuntime {
     engine: Engine,
-    linker: Linker<WasiP1Ctx>,
-    modules: HashMap<String, WasiModuleEntry>,
+    linker: Linker<()>,
+    modules: HashMap<String, WasmModuleEntry>,
 }
 
-impl WasiRuntime {
+impl WasmRuntime {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let engine = Engine::default();
-        let mut linker = Linker::new(&engine);
-        wasmtime_wasi::p1::add_to_linker_sync(&mut linker, |ctx| ctx)?;
+        let linker = Linker::new(&engine);
 
         Ok(Self {
             engine,
@@ -25,7 +23,7 @@ impl WasiRuntime {
         })
     }
 
-    pub fn get_tool(&mut self, module_name: &str) -> Option<&mut WasiModuleEntry> {
+    pub fn get_tool(&mut self, module_name: &str) -> Option<&mut WasmModuleEntry> {
         self.modules.get_mut(module_name)
     }
 
@@ -34,14 +32,7 @@ impl WasiRuntime {
         cfg: crate::config::Module,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let module = Module::from_file(&self.engine, &cfg.path)?;
-        let mut store = Store::new(
-            &self.engine,
-            WasiCtxBuilder::new()
-                .inherit_stdio()
-                .preopened_dir(".", ".", DirPerms::all(), FilePerms::all())
-                .unwrap()
-                .build_p1(),
-        );
+        let mut store = Store::new(&self.engine, ());
         let instance = self.linker.instantiate(&mut store, &module)?;
 
         let tooldef = get_tool_definition(&instance, &mut store)?;
@@ -53,7 +44,7 @@ impl WasiRuntime {
         let func: TypedFunc<(i32, i32, i32, i32), i32> =
             instance.get_typed_func(&mut store, "run_tool")?;
 
-        let entry = WasiModuleEntry::new(store, tooldef, module, instance, func);
+        let entry = WasmModuleEntry::new(store, tooldef, module, instance, func);
 
         self.modules.insert(cfg.title, entry);
 
@@ -77,17 +68,17 @@ impl WasiRuntime {
     }
 }
 
-pub struct WasiModuleEntry {
-    pub store: Store<WasiP1Ctx>,
+pub struct WasmModuleEntry {
+    pub store: Store<()>,
     pub tooldef: ToolDefinition,
     pub module: Module,
     pub instance: Instance,
     pub func: TypedFunc<(i32, i32, i32, i32), i32>,
 }
 
-impl WasiModuleEntry {
+impl WasmModuleEntry {
     pub fn new(
-        store: Store<WasiP1Ctx>,
+        store: Store<()>,
         tooldef: ToolDefinition,
         module: Module,
         instance: Instance,
