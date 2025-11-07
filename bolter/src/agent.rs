@@ -1,7 +1,7 @@
 use rig::{
     OneOrMany,
-    agent::Text,
-    completion::CompletionModel,
+    agent::{Agent, Text},
+    completion::{Completion, CompletionModel},
     message::{AssistantContent, Message, ToolResult, ToolResultContent, UserContent},
 };
 
@@ -14,7 +14,7 @@ where
     fn with_wasm_runtime(self, runtime: WasmRuntime) -> AgentWithRuntime<M>;
 }
 
-impl<M> AgentRuntimeExt<M> for M
+impl<M> AgentRuntimeExt<M> for Agent<M>
 where
     M: CompletionModel,
 {
@@ -30,7 +30,7 @@ pub struct AgentWithRuntime<M>
 where
     M: CompletionModel,
 {
-    model: M,
+    model: Agent<M>,
     runtime: WasmRuntime,
 }
 
@@ -51,10 +51,9 @@ where
         loop {
             let res = self
                 .model
-                .completion_request(current_prompt.clone())
-                .messages(chat_history.clone())
+                .completion(current_prompt.clone(), chat_history.clone())
+                .await?
                 .tools(tooldefs.clone())
-                .preamble("You are a helpful agent".into())
                 .send()
                 .await
                 .unwrap();
@@ -99,11 +98,11 @@ where
                         .run_tool(&tc.function.name, tc.function.arguments.clone())
                         .unwrap();
 
-                    // println!(
-                    //     "Tool returned result: {text} Tool callID: {id:?} Tool call: {call:?}",
-                    //     id = tc.call_id,
-                    //     call = tc.id
-                    // );
+                    println!(
+                        "Tool returned result: {text} Tool callID: {id:?} Tool call: {call:?}",
+                        id = tc.call_id,
+                        call = tc.id
+                    );
 
                     tool_results.push(UserContent::ToolResult(ToolResult {
                         id: tc.id.clone(),

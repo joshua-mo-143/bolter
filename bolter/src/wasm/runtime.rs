@@ -1,7 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
 
 use rig::completion::ToolDefinition;
-use wasmtime::{Engine, Instance, Linker, Module, Store, TypedFunc};
+use wasmtime::{Caller, Engine, Instance, Linker, Module, Store, TypedFunc};
+
+use crate::wasm::host_fns::{fetch_url, post_url};
 
 use super::utils::{get_tool_definition, run_wasm_tool};
 
@@ -14,7 +16,46 @@ pub struct WasmRuntime {
 impl WasmRuntime {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let engine = Engine::default();
-        let linker = Linker::new(&engine);
+        let mut linker = Linker::new(&engine);
+
+        linker.func_wrap(
+            "env",
+            "fetch_url",
+            |_caller: Caller<'_, ()>, ptr: i32, len: i32| {
+                let _ = fetch_url(ptr, len);
+
+                return 0;
+            },
+        )?;
+
+        linker.func_wrap(
+            "env",
+            "fetch_url_post",
+            |mut caller: Caller<'_, ()>, ptr: i32, len: i32, out_ptr: i32| {
+                let memory = caller.get_export("memory").unwrap().into_memory().unwrap();
+
+                let mut buf = vec![0u8; len as usize];
+                memory.read(&caller, ptr as usize, &mut buf).unwrap();
+
+                let resp = post_url(buf).unwrap();
+                let resp_bytes = resp.into_bytes();
+
+                let resp_ptr_offset = 2000; // example
+                memory
+                    .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                    .unwrap();
+
+                let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                memory
+                    .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                    .unwrap();
+                memory
+                    .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                    .unwrap();
+            },
+        )?;
 
         Ok(Self {
             engine,
@@ -23,8 +64,30 @@ impl WasmRuntime {
         })
     }
 
+    pub fn with_modules_from_file<P>(path: P) -> Result<Self, Box<dyn std::error::Error>>
+    where
+        P: AsRef<Path>,
+    {
+        let runtime = Self::new()?;
+
+        runtime.add_modules_from_file(path)
+    }
+
     pub fn get_tool(&mut self, module_name: &str) -> Option<&mut WasmModuleEntry> {
         self.modules.get_mut(module_name)
+    }
+
+    pub fn add_modules_from_file<P>(mut self, path: P) -> Result<Self, Box<dyn std::error::Error>>
+    where
+        P: AsRef<Path>,
+    {
+        let config = crate::config::Config::from_file(path);
+
+        for binary in config.data {
+            self.add_module(binary)?;
+        }
+
+        Ok(self)
     }
 
     pub fn add_module(
