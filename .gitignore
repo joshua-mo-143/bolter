@@ -1,4 +1,3 @@
 target/
-test-units/test-member*
-test-units/test_lib*
+test-units/test_*.wasm
 .envrc

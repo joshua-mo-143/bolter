@@ -1911,6 +1911,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "test-fetch"
+version = "0.1.0"
+dependencies = [
+ "macros",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "test-lib"
 version = "0.1.0"
 dependencies = [

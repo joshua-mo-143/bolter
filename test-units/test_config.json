@@ -4,6 +4,12 @@
       "path": "test-units/test_lib.wasm",
       "title": "test_lib",
       "description": "A test library that holds a single `run_tool` function (created from an attribute macro). Returns \"Hello\" followed by whatever string you put into it.",
+      "module_type": "tool"
+    },
+    {
+      "path": "test-units/test_fetch.wasm",
+      "title": "test_fetch",
+      "description": "A test library that holds a single `run_tool` function (created from an attribute macro). Executes a POST request, then returns the results.",
       "module_type": "tool",
       "permissions": {
         "http": true

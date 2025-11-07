@@ -12,8 +12,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()
         .with_wasm_runtime(runtime);
 
-    let prompt = "Please use my WASM tool twice to help me verify that \
-        this demo works, and return what it says both times.";
+    let prompt = "Please use my each of my tools to help me verify that \
+        this demo works, and return what all of them say.";
 
     println!("Prompt: {prompt}");
 
