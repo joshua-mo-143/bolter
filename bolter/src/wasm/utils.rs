@@ -1,8 +1,10 @@
 use wasmtime::{Instance, Store, TypedFunc};
 
+use crate::config::Permissions;
+
 pub(crate) fn run_wasm_tool(
     instance: &Instance,
-    mut store: &mut Store<()>,
+    mut store: &mut Store<Permissions>,
     func: &TypedFunc<(i32, i32, i32, i32), i32>,
     args: serde_json::Value,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -48,7 +50,7 @@ pub(crate) fn run_wasm_tool(
 
 pub fn get_tool_definition(
     instance: &Instance,
-    mut store: &mut Store<()>,
+    mut store: &mut Store<Permissions>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let memory = instance
         .get_memory(&mut store, "memory")

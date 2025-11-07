@@ -24,6 +24,8 @@ pub struct Module {
     pub title: String,
     pub description: String,
     pub module_type: ModuleKind,
+    #[serde(default)]
+    pub permissions: Permissions,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -31,4 +33,15 @@ pub struct Module {
 pub enum ModuleKind {
     Binary,
     Tool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Permissions {
+    http: bool,
+}
+
+impl Permissions {
+    pub fn http(&self) -> bool {
+        self.http
+    }
 }

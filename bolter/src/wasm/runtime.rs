@@ -3,13 +3,16 @@ use std::{collections::HashMap, path::Path};
 use rig::completion::ToolDefinition;
 use wasmtime::{Caller, Engine, Instance, Linker, Module, Store, TypedFunc};
 
-use crate::wasm::host_fns::{fetch_url, post_url};
+use crate::{
+    config::Permissions,
+    wasm::host_fns::{fetch_url, post_url},
+};
 
 use super::utils::{get_tool_definition, run_wasm_tool};
 
 pub struct WasmRuntime {
     engine: Engine,
-    linker: Linker<()>,
+    linker: Linker<Permissions>,
     modules: HashMap<String, WasmModuleEntry>,
 }
 
@@ -21,17 +24,52 @@ impl WasmRuntime {
         linker.func_wrap(
             "env",
             "fetch_url",
-            |_caller: Caller<'_, ()>, ptr: i32, len: i32| {
-                let _ = fetch_url(ptr, len);
+            |mut caller: Caller<'_, Permissions>, ptr: i32, len: i32, out_ptr: i32| {
+                let memory = caller.get_export("memory").unwrap().into_memory().unwrap();
+                let resp_ptr_offset = 2000;
 
-                return 0;
+                if caller.data().http() {
+                    let resp = fetch_url(ptr, len).unwrap();
+                    let resp_bytes = resp.into_bytes();
+
+                    memory
+                        .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                        .unwrap();
+
+                    let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                    let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                    memory
+                        .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                        .unwrap();
+                    memory
+                        .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                        .unwrap();
+                } else {
+                    let resp = "ERROR: No permissions to carry out a HTTP request.".to_string();
+                    let resp_bytes = resp.into_bytes();
+
+                    memory
+                        .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                        .unwrap();
+
+                    let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                    let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                    memory
+                        .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                        .unwrap();
+                    memory
+                        .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                        .unwrap();
+                }
             },
         )?;
 
         linker.func_wrap(
             "env",
             "fetch_url_post",
-            |mut caller: Caller<'_, ()>, ptr: i32, len: i32, out_ptr: i32| {
+            |mut caller: Caller<'_, Permissions>, ptr: i32, len: i32, out_ptr: i32| {
                 let memory = caller.get_export("memory").unwrap().into_memory().unwrap();
 
                 let mut buf = vec![0u8; len as usize];
@@ -95,7 +133,7 @@ impl WasmRuntime {
         cfg: crate::config::Module,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let module = Module::from_file(&self.engine, &cfg.path)?;
-        let mut store = Store::new(&self.engine, ());
+        let mut store = Store::new(&self.engine, cfg.permissions);
         let instance = self.linker.instantiate(&mut store, &module)?;
 
         let tooldef = get_tool_definition(&instance, &mut store)?;
@@ -132,7 +170,7 @@ impl WasmRuntime {
 }
 
 pub struct WasmModuleEntry {
-    pub store: Store<()>,
+    pub store: Store<Permissions>,
     pub tooldef: ToolDefinition,
     pub module: Module,
     pub instance: Instance,
@@ -141,7 +179,7 @@ pub struct WasmModuleEntry {
 
 impl WasmModuleEntry {
     pub fn new(
-        store: Store<()>,
+        store: Store<Permissions>,
         tooldef: ToolDefinition,
         module: Module,
         instance: Instance,
