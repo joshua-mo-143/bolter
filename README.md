@@ -3,9 +3,8 @@ Bolter is an experimental agent runtime using sandboxed tool execution (built on
 
 There are currently several components to this library:
 - The main program itself (currently doesn't do that much, just simulates a conversation with an LLM while calling into the tool sandboxing)
-- A crate to hold macros primarily to help with writing tool functions in WASI modules
-- A library that compiles to WASI (`test-lib`)
-- A binary that compiles to WASI (`test-member`). This compiles to two binaries - `test-member1` and `test-member2`.
+- A crate to hold macros primarily to help with writing tool functions in WASM modules
+- A library that compiles to WASM (`test-lib`)
 
 ## How to Use
 Before you use this, you will need [`wasmtime`](https://docs.wasmtime.dev/cli-install.html) installed as well as the Rust programming language.
