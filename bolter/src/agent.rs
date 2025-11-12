@@ -71,19 +71,14 @@ where
                 }
             }
 
+            chat_history.push(Message::Assistant {
+                id: None,
+                content: res.choice,
+            });
+
             if tool_calls.is_empty() {
                 break Ok(current_response);
             } else {
-                let vec_toolcalls: Vec<AssistantContent> = tool_calls
-                    .iter()
-                    .map(|x| AssistantContent::ToolCall(x.clone()))
-                    .collect();
-
-                chat_history.push(Message::Assistant {
-                    id: None,
-                    content: OneOrMany::many(vec_toolcalls).unwrap(),
-                });
-
                 let mut tool_results = Vec::new();
 
                 for tc in tool_calls {
