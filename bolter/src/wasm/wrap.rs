@@ -19,7 +19,8 @@ pub fn wrap_linker(linker: &mut Linker<Permissions>) -> Result<(), Box<dyn std::
             let mut buf = vec![0u8; len as usize];
             memory.read(&caller, ptr as usize, &mut buf).unwrap();
 
-            if caller.data().http() {
+            let permissions = caller.data();
+            if permissions.http() {
                 let resp = fetch_url(buf).unwrap();
                 let resp_bytes = resp.into_bytes();
 
@@ -96,7 +97,8 @@ pub fn wrap_linker(linker: &mut Linker<Permissions>) -> Result<(), Box<dyn std::
             let mut buf = vec![0u8; len as usize];
             memory.read(&caller, ptr as usize, &mut buf).unwrap();
 
-            if caller.data().fs() {
+            let permissions = caller.data();
+            if permissions.fs() {
                 let resp = read_dir(buf).unwrap();
                 let resp_bytes = resp.into_bytes();
 
@@ -144,7 +146,8 @@ pub fn wrap_linker(linker: &mut Linker<Permissions>) -> Result<(), Box<dyn std::
             let mut buf = vec![0u8; len as usize];
             memory.read(&caller, ptr as usize, &mut buf).unwrap();
 
-            if caller.data().fs() {
+            let permissions = caller.data();
+            if permissions.fs() {
                 let resp = read_file(buf).unwrap();
                 let resp_bytes = resp.into_bytes();
 
@@ -192,7 +195,8 @@ pub fn wrap_linker(linker: &mut Linker<Permissions>) -> Result<(), Box<dyn std::
             let mut buf = vec![0u8; len as usize];
             memory.read(&caller, ptr as usize, &mut buf).unwrap();
 
-            if caller.data().fs() {
+            let permissions = caller.data();
+            if permissions.fs() {
                 write_file(buf).unwrap();
                 let resp = "Write OK";
                 let resp_bytes = resp.as_bytes();
