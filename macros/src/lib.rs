@@ -52,7 +52,7 @@ pub fn wasi_tool(_attrs: TokenStream, body: TokenStream) -> TokenStream {
         };
 
         #[unsafe(no_mangle)]
-        pub fn run_tool(input_ptr: *const u8, input_len: u32, out_ptr: *mut u8, output_cap: u32) -> u32 {
+        pub unsafe fn run_tool(input_ptr: *const u8, input_len: u32, out_ptr: *mut u8, output_cap: u32) -> u32 {
             #func
 
             let input = unsafe {
@@ -76,7 +76,7 @@ pub fn wasi_tool(_attrs: TokenStream, body: TokenStream) -> TokenStream {
         }
 
         #[unsafe(no_mangle)]
-        pub fn tool_definition(out_ptr: *mut u8, max_len: u32) -> u32 {
+        pub unsafe fn tool_definition(out_ptr: *mut u8, max_len: u32) -> u32 {
             let json = serde_json::to_string(&schemars::schema_for!(#input_type)).unwrap();
             let result_bytes = json.as_bytes();
             let n = result_bytes.len().min(max_len as usize);

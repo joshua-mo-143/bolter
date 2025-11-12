@@ -1,9 +1,16 @@
 //! Host functions.
 
-pub fn fetch_url(_ptr: i32, _len: i32) -> Result<String, i32> {
-    let url = "https://example.com";
+#[derive(Deserialize, Serialize)]
+struct HttpRequest {
+    pub body: Vec<u8>,
+    pub headers: BTreeMap<String, PlaintextOrSecret>,
+    pub url: String,
+}
 
-    let body = reqwest::blocking::get(url).unwrap().text().unwrap();
+pub fn fetch_url(body: Vec<u8>) -> Result<String, i32> {
+    let req: HttpRequest = serde_json::from_slice(&body).unwrap();
+
+    let body = reqwest::blocking::get(req.url).unwrap().text().unwrap();
 
     Ok(body)
 }

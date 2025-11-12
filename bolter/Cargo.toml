@@ -7,7 +7,12 @@ edition = "2024"
 name = "basic"
 path = "src/bin/basic.rs"
 
+[[bin]]
+name = "try_stuff"
+path = "src/bin/try_stuff.rs"
+
 [dependencies]
+keyring = { version = "3.6", features = ["linux-native-sync-persistent", "sync-secret-service"] }
 reqwest = { version = "0.12.24", features = ["blocking"] }
 rig-core = { version = "0.22.0" }
 serde = { version = "1.0.228", features = ["derive"] }
