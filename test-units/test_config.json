@@ -1,8 +1,8 @@
 {
   "data": [
     {
-      "path": "test-units/test_lib.wasm",
-      "title": "test_lib",
+      "path": "test-units/test_hello.wasm",
+      "title": "test_hello",
       "description": "A test library that holds a single `run_tool` function (created from an attribute macro). Returns \"Hello\" followed by whatever string you put into it.",
       "module_type": "tool"
     },
@@ -16,10 +16,31 @@
       }
     },
     {
-      "path": "test-units/test_fsread.wasm",
-      "title": "test_fetch",
-      "description": "A test library that tries to read whatever directory you give it.",
-      "module_type": "tool"
+      "path": "test-units/test_fs_readfile.wasm",
+      "title": "test_read_file",
+      "description": "A test library that tries to read whatever file location you give it (if you don't know what to use, use \"Cargo.toml\".",
+      "module_type": "tool",
+      "permissions": {
+        "fs": true
+      }
+    },
+    {
+      "path": "test-units/test_fs_readdir.wasm",
+      "title": "test_read_dir",
+      "description": "A test library that tries to read whatever directory you give it (if you don't know what to use, use \".\".",
+      "module_type": "tool",
+      "permissions": {
+        "fs": true
+      }
+    },
+    {
+      "path": "test-units/test_fs_writefile.wasm",
+      "title": "test_read_file",
+      "description": "A test library that tries to write a provided string to whatever directory file path you give it.",
+      "module_type": "tool",
+      "permissions": {
+        "fs": true
+      }
     }
   ]
 }

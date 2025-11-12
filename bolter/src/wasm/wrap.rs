@@ -2,7 +2,10 @@ use wasmtime::{Caller, Linker};
 
 use crate::{
     config::Permissions,
-    wasm::host_fns::{fetch_url, post_url},
+    wasm::host_fns::{
+        fs::{read_dir, read_file, write_file},
+        http::{fetch_url, post_url},
+    },
 };
 
 pub fn wrap_linker(linker: &mut Linker<Permissions>) -> Result<(), Box<dyn std::error::Error>> {
@@ -80,6 +83,151 @@ pub fn wrap_linker(linker: &mut Linker<Permissions>) -> Result<(), Box<dyn std::
             memory
                 .write(&mut caller, out_ptr as usize + 4, &len_bytes)
                 .unwrap();
+        },
+    )?;
+
+    linker.func_wrap(
+        "env",
+        "read_dir",
+        |mut caller: Caller<'_, Permissions>, ptr: i32, len: i32, out_ptr: i32| {
+            let memory = caller.get_export("memory").unwrap().into_memory().unwrap();
+            let resp_ptr_offset = 2000;
+
+            let mut buf = vec![0u8; len as usize];
+            memory.read(&caller, ptr as usize, &mut buf).unwrap();
+
+            if caller.data().fs() {
+                let resp = read_dir(buf).unwrap();
+                let resp_bytes = resp.into_bytes();
+
+                memory
+                    .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                    .unwrap();
+
+                let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                memory
+                    .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                    .unwrap();
+                memory
+                    .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                    .unwrap();
+            } else {
+                let resp = "ERROR: No permissions to use filesystem.".to_string();
+                let resp_bytes = resp.into_bytes();
+
+                memory
+                    .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                    .unwrap();
+
+                let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                memory
+                    .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                    .unwrap();
+                memory
+                    .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                    .unwrap();
+            }
+        },
+    )?;
+
+    linker.func_wrap(
+        "env",
+        "read_file",
+        |mut caller: Caller<'_, Permissions>, ptr: i32, len: i32, out_ptr: i32| {
+            let memory = caller.get_export("memory").unwrap().into_memory().unwrap();
+            let resp_ptr_offset = 2000;
+
+            let mut buf = vec![0u8; len as usize];
+            memory.read(&caller, ptr as usize, &mut buf).unwrap();
+
+            if caller.data().fs() {
+                let resp = read_file(buf).unwrap();
+                let resp_bytes = resp.into_bytes();
+
+                memory
+                    .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                    .unwrap();
+
+                let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                memory
+                    .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                    .unwrap();
+                memory
+                    .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                    .unwrap();
+            } else {
+                let resp = "ERROR: No permissions to use filesystem.".to_string();
+                let resp_bytes = resp.into_bytes();
+
+                memory
+                    .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                    .unwrap();
+
+                let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                memory
+                    .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                    .unwrap();
+                memory
+                    .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                    .unwrap();
+            }
+        },
+    )?;
+
+    linker.func_wrap(
+        "env",
+        "write_file",
+        |mut caller: Caller<'_, Permissions>, ptr: i32, len: i32, out_ptr: i32| {
+            let memory = caller.get_export("memory").unwrap().into_memory().unwrap();
+            let resp_ptr_offset = 2000;
+
+            let mut buf = vec![0u8; len as usize];
+            memory.read(&caller, ptr as usize, &mut buf).unwrap();
+
+            if caller.data().fs() {
+                write_file(buf).unwrap();
+                let resp = "Write OK";
+                let resp_bytes = resp.as_bytes();
+
+                memory
+                    .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                    .unwrap();
+
+                let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                memory
+                    .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                    .unwrap();
+                memory
+                    .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                    .unwrap();
+            } else {
+                let resp = "ERROR: No permissions to use filesystem.".to_string();
+                let resp_bytes = resp.into_bytes();
+
+                memory
+                    .write(&mut caller, resp_ptr_offset, &resp_bytes)
+                    .unwrap();
+
+                let ptr_bytes = (resp_ptr_offset as i32).to_le_bytes();
+                let len_bytes = (resp_bytes.len() as i32).to_le_bytes();
+
+                memory
+                    .write(&mut caller, out_ptr as usize, &ptr_bytes)
+                    .unwrap();
+                memory
+                    .write(&mut caller, out_ptr as usize + 4, &len_bytes)
+                    .unwrap();
+            }
         },
     )?;
 

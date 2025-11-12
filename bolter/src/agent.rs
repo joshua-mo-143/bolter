@@ -87,11 +87,11 @@ where
                 let mut tool_results = Vec::new();
 
                 for tc in tool_calls {
-                    // println!(
-                    //     "Calling function {name} with args {args:?}",
-                    //     name = tc.function.name,
-                    //     args = tc.function.arguments
-                    // );
+                    println!(
+                        "Calling function {name} with args {args:?}",
+                        name = tc.function.name,
+                        args = tc.function.arguments
+                    );
 
                     let text = self
                         .runtime

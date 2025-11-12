@@ -37,11 +37,18 @@ pub enum ModuleKind {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Permissions {
+    #[serde(default)]
     http: bool,
+    #[serde(default)]
+    fs: bool,
 }
 
 impl Permissions {
     pub fn http(&self) -> bool {
         self.http
+    }
+
+    pub fn fs(&self) -> bool {
+        self.fs
     }
 }

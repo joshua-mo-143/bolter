@@ -1,15 +1,9 @@
 use std::{collections::HashMap, path::Path};
 
 use rig::completion::ToolDefinition;
-use wasmtime::{Caller, Engine, Instance, Linker, Module, Store, TypedFunc};
+use wasmtime::{Engine, Instance, Linker, Module, Store, TypedFunc};
 
-use crate::{
-    config::Permissions,
-    wasm::{
-        host_fns::{fetch_url, post_url},
-        wrap::wrap_linker,
-    },
-};
+use crate::{config::Permissions, wasm::wrap::wrap_linker};
 
 use super::utils::{get_tool_definition, run_wasm_tool};
 

@@ -1,5 +1,5 @@
 [package]
-name = "test-lib"
+name = "test-fs-writefile"
 version = "0.1.0"
 edition = "2024"
 

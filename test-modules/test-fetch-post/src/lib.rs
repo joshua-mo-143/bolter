@@ -46,11 +46,16 @@ enum PlaintextOrSecret {
 #[macros::wasi_tool]
 pub fn my_tool(input: Foo) -> String {
     let body = serde_json::to_vec(&input).unwrap();
+    let mut headers = BTreeMap::new();
+    headers.insert(
+        "content-type".to_string(),
+        PlaintextOrSecret::Plaintext("application/json".to_string()),
+    );
 
     let (req_ptr, req_size) = HttpRequest {
         body,
-        headers: BTreeMap::new(),
-        url: "https://example.com".to_string(),
+        headers,
+        url: "https://httpbin.org/post".to_string(),
     }
     .to_pointer();
 
