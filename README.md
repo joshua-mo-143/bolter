@@ -2,9 +2,11 @@
 Bolter is an experimental agent runtime using sandboxed tool execution (built on top of [`rig`](https://www.github.com/0xplaygrounds/rig)).
 
 There are currently several components to this library:
-- The main program itself (currently doesn't do that much, just simulates a conversation with an LLM while calling into the tool sandboxing)
-- A crate to hold macros primarily to help with writing tool functions in WASM modules
-- A library that compiles to WASM (`test-lib`)
+- The `bolter` library itself
+  - This library also contains two binaries you can run: one for simply just testing the modules work, and a web server you can send POST requests to.
+- A macro-based crate layer (to help with writing tools... since handling raw pointers is generally not good DX)
+- Several WASM-based test modules that can be loaded into the runtime from a config file (see `test-units` folder)
+- a `justfile` with several different helpful commands you can try
 
 ## How to Use
 Before you use this, you will need [`wasmtime`](https://docs.wasmtime.dev/cli-install.html) installed as well as the Rust programming language.
